@@ -22,6 +22,7 @@ import sys
 import os
 import pcbnew
 import time
+import re
 
 import logging
 import zipfile
@@ -33,7 +34,9 @@ from datetime import datetime
 from shutil import copy
 
 
+
 filename=sys.argv[1]
+git_rev=sys.argv[2]
 project_name = os.path.splitext(os.path.split(filename)[1])[0]
 project_path = os.path.abspath(os.path.split(filename)[0])
 
@@ -51,7 +54,8 @@ popt.SetOutputDirectory(output_directory)
 
 # Set some important plot options:
 popt.SetPlotFrameRef(False)
-popt.SetLineWidth(FromMM(0.35))
+# Nightly doesn't like SetLineWidth
+# popt.SetLineWidth(FromMM(0.35))
 
 popt.SetAutoScale(False)
 popt.SetScale(1)
@@ -68,17 +72,22 @@ popt.SetPlotInvisibleText(False)
 # This by gerbers only (also the name is truly horrid!)
 popt.SetSubtractMaskFromSilk(True) #remove solder mask from silk to be sure there is no silk on pads
 
+for module in board.GetDrawings():
+    if(isinstance(module, pcbnew.TEXTE_PCB)):
+        if "${GIT_REV}" in module.GetText():
+            module.SetText(module.GetText().replace("${GIT_REV}", git_rev))
+            print("Git Revision Replaced")
 
 plot_plan = [
-    ( "CuTop", F_Cu, "Top layer", ".gtl"),
-    ( "CuBottom", B_Cu, "Bottom layer", ".gbl"),
-    ( "MaskBottom", B_Mask, "Mask Bottom", ".gbs"),
-    ( "MaskTop", F_Mask, "Mask top", ".gts"),
-    ( "PasteBottom", B_Paste, "Paste Bottom", ".gbp"),
-    ( "PasteTop", F_Paste, "Paste Top", ".gtp"),
-    ( "SilkTop", F_SilkS, "Silk Top", ".gto"),
-    ( "SilkBottom", B_SilkS, "Silk Bottom", ".gbo"),
-    ( "EdgeCuts", Edge_Cuts, "Edges", ".gml")
+    ( "F_Cu", F_Cu, "Top layer"),
+    ( "B_Cu", B_Cu, "Bottom layer"),
+    ( "B_Mask", B_Mask, "Mask Bottom"),
+    ( "F_Mask", F_Mask, "Mask top"),
+    ( "B_Paste", B_Paste, "Paste Bottom"),
+    ( "F_Paste", F_Paste, "Paste Top"),
+    ( "F_SilkS", F_SilkS, "Silk Top"),
+    ( "B_SilkS", B_SilkS, "Silk Bottom"),
+    ( "Edge_Cuts", Edge_Cuts, "Edges")
 ]
 
 popt.SetMirror(False)
@@ -94,12 +103,9 @@ for layer_info in plot_plan:
     pctl.PlotLayer()
     time.sleep(0.01)
     pctl.ClosePlot()
-    # Create a copy with same filename and Protel extensions.
-    srcPlot = pctl.GetPlotFileName()
-    dstPlot = os.path.join(output_directory,project_name + layer_info[3])
-    shutil.move(srcPlot, dstPlot)
-    print(layer_info[0] + " => " + dstPlot)
-    fab_files.append(dstPlot)
+    plotFile = pctl.GetPlotFileName()
+    print(f"Plotted {plotFile}")
+    fab_files.append(plotFile)
 
 
 #generate internal copper layers, if any
@@ -112,13 +118,9 @@ for innerlyr in range ( 1, lyrcnt-1 ):
     pctl.PlotLayer()
     time.sleep(0.01)
     pctl.ClosePlot()
-    # Create a copy with same filename and Protel extensions.
-    srcPlot = pctl.GetPlotFileName()
-    dstPlot = os.path.join(output_directory,project_name + '.g' + str(innerlyr + 1))
-    shutil.move(srcPlot, dstPlot)
-    print(lyrname + " => " + dstPlot)
-    fab_files.append(dstPlot)
-
+    plotFile = pctl.GetPlotFileName()
+    print(f"Plotted {plotFile}")
+    fab_files.append(plotFile)
 
 # Fabricators need drill files.
 # sometimes a drill map file is asked (for verification purpose)
@@ -133,21 +135,22 @@ if popt.GetUseAuxOrigin():
 else:
     offset = wxPoint(0,0)
 
-mergeNPTH = True
+mergeNPTH = False
 drlwriter.SetOptions( mirror, minimalHeader, offset, mergeNPTH )
 
 metricFmt = True
 drlwriter.SetFormat( metricFmt )
 
 genDrl = True
-genMap = False
+genMap = True
 drlwriter.CreateDrillandMapFilesSet( output_directory, genDrl, genMap );
 
-srcPlot = os.path.join(output_directory,project_name + '.drl')
-dstPlot = os.path.join(output_directory,project_name + '.txt')
-shutil.move(srcPlot, dstPlot)
-print(srcPlot + " => " + dstPlot)
-fab_files.append(dstPlot)
+drlPlot = os.path.join(output_directory,project_name + '-PTH.drl')
+print("Plotted" + drlPlot)
+fab_files.append(drlPlot)
+drlPlot = os.path.join(output_directory,project_name + '-NPTH.drl')
+print("Plotted" + drlPlot)
+fab_files.append(drlPlot)
 
 # One can create a text file to report drill statistics
 rptfn = output_directory + '/drill_report.txt'
