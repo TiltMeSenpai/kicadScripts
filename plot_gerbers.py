@@ -35,8 +35,8 @@ from shutil import copy
 
 
 
-filename=sys.argv[1]
-git_rev=sys.argv[2]
+filename = os.environ.get("PCB_PATH",    sys.argv[1])
+git_rev  = os.environ.get("PCB_VERSION", sys.argv[2])
 project_name = os.path.splitext(os.path.split(filename)[1])[0]
 project_path = os.path.abspath(os.path.split(filename)[0])
 
@@ -55,7 +55,10 @@ popt.SetOutputDirectory(output_directory)
 # Set some important plot options:
 popt.SetPlotFrameRef(False)
 # Nightly doesn't like SetLineWidth
-# popt.SetLineWidth(FromMM(0.35))
+try:
+    popt.SetLineWidth(FromMM(0.35))
+except AttributeError:
+    pass
 
 popt.SetAutoScale(False)
 popt.SetScale(1)
