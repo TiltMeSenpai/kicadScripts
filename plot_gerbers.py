@@ -135,7 +135,7 @@ mirror = False
 minimalHeader = False
 
 if popt.GetUseAuxOrigin():
-    offset = board.GetAuxOrigin()
+    offset = getattr(board, "GetAuxOrigin", lambda: wxPoint(0, 0))
 else:
     offset = wxPoint(0,0)
 
