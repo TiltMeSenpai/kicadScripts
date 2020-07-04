@@ -135,7 +135,10 @@ mirror = False
 minimalHeader = False
 
 if popt.GetUseAuxOrigin():
-    offset = getattr(board, "GetAuxOrigin", lambda: wxPoint(0, 0))
+    def aux_origin_missing():
+        popt.SetUseAuxOrigin(False)
+        return wxPoint(0, 0)
+    offset = getattr(board, "GetAuxOrigin", aux_origin_missing)()
 else:
     offset = wxPoint(0,0)
 
@@ -147,7 +150,7 @@ drlwriter.SetFormat( metricFmt )
 
 genDrl = True
 genMap = True
-drlwriter.CreateDrillandMapFilesSet( output_directory, genDrl, genMap );
+drlwriter.CreateDrillandMapFilesSet( output_directory, genDrl, genMap )
 
 drlPlot = os.path.join(output_directory,project_name + '-PTH.drl')
 print("Plotted" + drlPlot)
@@ -158,7 +161,7 @@ fab_files.append(drlPlot)
 
 # One can create a text file to report drill statistics
 rptfn = output_directory + '/drill_report.txt'
-drlwriter.GenDrillReportFile( rptfn );
+drlwriter.GenDrillReportFile( rptfn )
 
 
 
