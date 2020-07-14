@@ -163,17 +163,4 @@ fab_files.append(drlPlot)
 rptfn = output_directory + '/drill_report.txt'
 drlwriter.GenDrillReportFile( rptfn )
 
-
-
-#zip up all files
-zf = zipfile.ZipFile(os.path.join(output_directory, 'gerbers.zip'), "w", zipfile.ZIP_DEFLATED)
-abs_src = os.path.abspath(output_directory)
-for filename in  fab_files:
-        absname = os.path.abspath(filename)
-        arcname = absname[len(abs_src) + 1:]
-        print('zipping %s as %s' % (filename,
-                                    arcname))
-        zf.write(absname, arcname)
-zf.close()
-
 # We have just generated your plotfiles with a single script
