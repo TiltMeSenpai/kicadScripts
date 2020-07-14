@@ -80,7 +80,7 @@ for module in board.GetDrawings():
     if(isinstance(module, pcbnew.TEXTE_PCB)):
         if "${GIT_REV}" in module.GetText():
             module.SetText(module.GetText().replace("${GIT_REV}", git_rev))
-            print("Git Revision Replaced")
+            print(f"Git Revision Replaced: {git_rev}")
 
 plot_plan = [
     ( "F_Cu", F_Cu, "Top layer"),
