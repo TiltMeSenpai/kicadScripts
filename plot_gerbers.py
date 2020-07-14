@@ -166,7 +166,7 @@ drlwriter.GenDrillReportFile( rptfn )
 
 
 #zip up all files
-zf = zipfile.ZipFile(os.path.join('gerbers.zip'), "w", zipfile.ZIP_DEFLATED)
+zf = zipfile.ZipFile(os.path.join(output_directory, 'gerbers.zip'), "w", zipfile.ZIP_DEFLATED)
 abs_src = os.path.abspath(output_directory)
 for filename in  fab_files:
         absname = os.path.abspath(filename)
